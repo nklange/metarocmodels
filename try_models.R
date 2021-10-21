@@ -46,11 +46,11 @@ library("cmdstanr")
 
 ### Exp. 1:
 
-e1 <- d1[[1]]
-str(e1)
+e2 <- d1[[1]]
+str(e2)
 
 
-ggplot(e1 %>% filter(condition == "Backward"),aes(x = rating))+
+ggplot(e2,aes(x = rating))+
   geom_histogram()+
   facet_grid(isold~.)
 
@@ -109,12 +109,12 @@ fit_uvsdt_e1_v1 <- brm(
 
 library(cmdstanr)
 
-duse <- e1
+duse <- e2
   
 uvsdt_m <- bf(rating ~ isold:condition + (isold|s|id) + (1|item), 
-              disc ~ 0 + isold:condition + (isold|s|id), center = FALSE, 
+              disc ~ 0 + isold:condition + (0 + isold|s|id), center = FALSE, 
               cmc = FALSE)
-bs_model <- cmdstan_model("models/uvsdt_between_w-item_v1.stan")
+bs_model <- cmdstan_model("models/uvsdt_between_w-item_v2.stan")
 bs_model$print()
 
 tmpdat <- make_standata(uvsdt_m,
@@ -122,17 +122,27 @@ tmpdat <- make_standata(uvsdt_m,
                         data = duse)
 
 str(tmpdat)
-fit_uvsdt_e1_v1 <- bs_model$sample(
-  data = tmpdat, 
+fit_uvsdt_e1_v2 <- bs_model$sample(
+  data = tmpdat,
+  adapt_delta = 0.95,
+  max_treedepth = 20,
   seed = 667667667, 
   init = 0,
   chains = 6, parallel_chains = 6)
 
+# Warning: 342 of 6000 (6.0%) transitions ended with a divergence.
+# This may indicate insufficient exploration of the posterior distribution.
+# Possible remedies include: 
+#  * Increasing adapt_delta closer to 1 (default is 0.8) 
+# * Reparameterizing the model (e.g. using a non-centered parameterization)
+# * Using informative or weakly informative prior distributions 
 
-fit_uvsdt_e2_v1$save_object(file = "Fits/fit_uvsdt_e1_v1.RDS")
-saveRDS(rstan::read_stan_csv(fit_uvsdt_e2_v1$output_files()),"rstanfits/fit_uvsdt_e1_v1_rstan.rds")
+# also warning about leapfrog steps ... increased max_treedepth to 20 instead of 10
 
-test <- fit_uvsdt_e1_v1$summary()
+fit_uvsdt_e1_v2$save_object(file = "Fits/fit_uvsdt_e1_v2.RDS")
+saveRDS(rstan::read_stan_csv(fit_uvsdt_e1_v2$output_files()),"rstanfits/fit_uvsdt_e1_v2_rstan.rds")
+
+test <- fit_uvsdt_e1_v2$summary()
 
 
 
