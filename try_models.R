@@ -27,8 +27,8 @@ map(d1, ~table(.$rating))
 d1 <- map(d1, ~{
   mutate(.,
          isold = if_else(oldnew == "New", 0, 1),
-         oldnew = factor(oldnew, levels = c("New", "Old")),
-         rating = abs(rating-7)
+         oldnew = factor(oldnew, levels = c("New", "Old"))
+        
          )
 })
 
@@ -50,15 +50,22 @@ e1 <- d1[[1]]
 str(e1)
 
 
-uvsdt_m <- bf(rating ~ isold:condition + (isold|s|id) + (1|item), 
-              disc ~ 0 + isold:condition + (isold|s|id), center = FALSE, 
+ggplot(e1 %>% filter(condition == "Backward"),aes(x = rating))+
+  geom_histogram()+
+  facet_grid(isold~.)
+
+uvsdt_m_base <- bf(rating ~ isold, 
+              disc ~ 0 + isold, center = FALSE, 
               cmc = FALSE)
 
-make_stancode(uvsdt_m,
+uvsdt_m_base_v2 <- bf(rating ~ isold, 
+                   disc ~ 0 + isold)
+
+make_stancode(uvsdt_m_base,
   family = cumulative(link = "probit"),
   data = e1)
 
-tmpdat <- make_standata(uvsdt_m,
+tmpdat <- make_standata(uvsdt_m_base,
   family = cumulative(link = "probit"),
   data = e1)
 str(tmpdat)
@@ -89,7 +96,7 @@ make_stancode(uvsdt_m,
               data = e1, prior = prior1)
 
 fit_uvsdt_e1_v1 <- brm(
-  uvsdt_m, 
+  uvsdt_m_base, 
   family = cumulative(link = "probit"),
   data = e1,
   control = list(adapt_delta = .99),
@@ -107,23 +114,25 @@ duse <- e1
 uvsdt_m <- bf(rating ~ isold:condition + (isold|s|id) + (1|item), 
               disc ~ 0 + isold:condition + (isold|s|id), center = FALSE, 
               cmc = FALSE)
+bs_model <- cmdstan_model("models/uvsdt_between_w-item_v1.stan")
+bs_model$print()
+
 tmpdat <- make_standata(uvsdt_m,
                         family = cumulative(link = "probit"),
                         data = duse)
 
-between_model <- cmdstan_model("models/uvsdt_between_w-item_v1.stan")
-between_model$print()
-
-fit_uvsdt_e1_v2 <- between_model$sample(
+str(tmpdat)
+fit_uvsdt_e1_v1 <- bs_model$sample(
   data = tmpdat, 
   seed = 667667667, 
   init = 0,
   chains = 6, parallel_chains = 6)
-fittest <- fit_uvsdt_e1
-fit_uvsdt_e1_v2$save_object(file = "Fits/fit_uvsdt_e1_v2.RDS")
 
 
-test <- fit_uvsdt_e1$summary()
+fit_uvsdt_e2_v1$save_object(file = "Fits/fit_uvsdt_e1_v1.RDS")
+saveRDS(rstan::read_stan_csv(fit_uvsdt_e2_v1$output_files()),"rstanfits/fit_uvsdt_e1_v1_rstan.rds")
 
-test2 <- fit_uvsdt_e1_v2$summary()
-bayesplot::mcmc_hist(fit_uvsdt_e1$draws("b[1]"))
+test <- fit_uvsdt_e1_v1$summary()
+
+
+

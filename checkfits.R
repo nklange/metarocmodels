@@ -1,0 +1,12 @@
+library("tidyverse")
+library("rstan")
+library("tidybayes")
+library("brms")
+library("cmdstanr")
+library(posterior)
+library(bayesplot)
+#install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+
+test <- fit_uvsdt_e1$summary()
+saveRDS(test,"fitsum.rds")
+bayesplot::mcmc_hist(fit_uvsdt_e1$draws("b[3]"))
