@@ -17,14 +17,14 @@ d1 <- map(d1, ~{
          )
 })
 
-exp <- d1[[3]]
+exp <- d1[[5]]
 
-exp <- exp %>% mutate(condition = paste0("block",block,"_",condition))
+#exp <- exp %>% mutate(condition = paste0("block",block,"_",condition))
 str(exp)
 
-ggplot(exp,aes(x=rating))+
-  geom_histogram()+
-  facet_wrap(isold~condition)
+# ggplot(exp,aes(x=rating))+
+#   geom_histogram()+
+#   facet_wrap(isold~condition)
 
 
 # Make stan code ----
@@ -87,13 +87,13 @@ stanmodel <- make_stancode(model_formula,
 tmpdat <- make_standata(model_formula,
                         family = cumulative(link = "probit"),
                         data = exp)
-str(tmpdat)
+#str(tmpdat)
 
 
 stanmodel$print()
 fit <- stanmodel$sample(
   data = tmpdat,
-  adapt_delta = 0.95,
+  adapt_delta = 0.99,
   max_treedepth = 20,
   seed = 667667667, 
   init = 0,
@@ -108,8 +108,8 @@ fit <- stanmodel$sample(
 
 # also warning about leapfrog steps ... increased max_treedepth to 20 instead of 10
 
-fit$save_object(file = "Fits/fit_uvsdt_e3_v2.RDS")
-saveRDS(rstan::read_stan_csv(fit$output_files()),"rstanfits/fit_uvsdt_e3_v2_rstan.rds")
+fit$save_object(file = "Fits/fit_uvsdt_e5_v1.RDS")
+saveRDS(rstan::read_stan_csv(fit$output_files()),"rstanfits/fit_uvsdt_e5_v1_rstan.rds")
 
-test <- fit_uvsdt_e1_v2$summary()
+test <- fit_uvsdt_e5_v1$summary()
 
