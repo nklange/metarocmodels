@@ -111,5 +111,7 @@ fit <- stanmodel$sample(
 fit$save_object(file = "Fits/fit_uvsdt_e5_v1.RDS")
 saveRDS(rstan::read_stan_csv(fit$output_files()),"rstanfits/fit_uvsdt_e5_v1_rstan.rds")
 
-test <- fit_uvsdt_e5_v1$summary()
 
+str(fit_e1)
+
+                  
